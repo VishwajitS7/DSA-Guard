@@ -6,6 +6,9 @@ import User from "@/lib/models/User";
 
 export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const force = searchParams.get("force") === "true";
+    
     const session = await getServerSession(authOptions);
     if (!session || !session.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -13,27 +16,55 @@ export async function GET(req: Request) {
 
     await connectDB();
     const dbUser = await User.findOne({ email: session.user.email });
-
     if (!dbUser) return NextResponse.json({ error: "User not found" });
 
+    // Check Cache (24 hour TTL)
+    const now = new Date();
+    const lastSync = dbUser.lastSyncedAt ? new Date(dbUser.lastSyncedAt) : null;
+    const isCacheValid = lastSync && (now.getTime() - lastSync.getTime() < 24 * 60 * 60 * 1000);
+
+    if (isCacheValid && !force) {
+      return NextResponse.json({ ...dbUser.externalStats, cached: true, lastSyncedAt: dbUser.lastSyncedAt });
+    }
+
+    // Perform Fresh Sync
     const stats = {
-      leetcode: { solved: 0, rating: 0 },
+      leetcode: { solved: 0 },
       gfg: { solved: 0, score: 0 },
       codechef: { rating: 0, stars: "" }
     };
 
-    // 1. LeetCode Sync
+    // 1. LeetCode (GraphQL - Most Reliable)
     if (dbUser.leetcodeUrl) {
       const username = dbUser.leetcodeUrl.split("/").filter(Boolean).pop();
       if (username) {
         try {
-          const res = await fetch(`https://leetcode-stats-api.herokuapp.com/${username}`);
+          const res = await fetch("https://leetcode.com/graphql", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              query: `
+                query getUserProfile($username: String!) {
+                  matchedUser(username: $username) {
+                    submitStatsGlobal {
+                      acSubmissionNum {
+                        difficulty
+                        count
+                      }
+                    }
+                  }
+                }
+              `,
+              variables: { username },
+            }),
+          });
           const data = await res.json();
-          if (data.status === "success") {
-            stats.leetcode.solved = data.totalSolved;
+          if (data.data?.matchedUser) {
+            const allSolved = data.data.matchedUser.submitStatsGlobal.acSubmissionNum.find((i: any) => i.difficulty === "All");
+            stats.leetcode.solved = allSolved?.count || 0;
           }
         } catch (e) {
-          console.error("LC Sync Error", e);
+          console.error("LC GraphQL Error", e);
         }
       }
     }
@@ -44,29 +75,21 @@ export async function GET(req: Request) {
         const response = await fetch(dbUser.gfgUrl, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
           },
           cache: 'no-store'
         });
-        const html = await response.text();
-        
-        // GFG: Improved detection for "Problems Solved"
-        const solvedMatch = html.match(/Problems Solved:?<\/span>\s*<span.*?>(\d+)</i) || 
-                            html.match(/scoreCard_card_value__.*?>(\d+)</i) ||
-                            html.match(/>(\d+)\s*Problems Solved</i);
-        if (solvedMatch) {
-          stats.gfg.solved = parseInt(solvedMatch[1]);
-        }
-        
-        // GFG: Improved detection for "Coding Score"
-        const scoreMatch = html.match(/Coding Score:?<\/span>\s*<span.*?>(\d+)</i) ||
-                           html.match(/scoreCard_card_value__.*?>(\d+)</gi)?.[1]?.match(/>(\d+)</)?.[1];
-        if (scoreMatch) {
-          stats.gfg.score = parseInt(scoreMatch as any);
+        if (response.ok) {
+          const html = await response.text();
+          
+          // GFG: Precision JSON extraction (handling escaped quotes)
+          const solvedMatch = html.match(/total_problems_solved["\\]+:(\d+)/i);
+          if (solvedMatch) stats.gfg.solved = parseInt(solvedMatch[1]);
+
+          const scoreMatch = html.match(/score["\\]+:(\d+)/i);
+          if (scoreMatch) stats.gfg.score = parseInt(scoreMatch[1]);
         }
       } catch (e) {
-        console.error("GFG Sync Error", e);
+        console.error("GFG Scraping Error", e);
       }
     }
 
@@ -76,32 +99,42 @@ export async function GET(req: Request) {
         const response = await fetch(dbUser.codechefUrl, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
           },
           cache: 'no-store'
         });
-        const html = await response.text();
-        
-        // CodeChef: Direct class match or relative label match
-        const ratingMatch = html.match(/<div class="rating-number">(\d+)/i) || 
-                            html.match(/(\d+)\s*<\/div>\s*<div class="rating-label"/i) ||
-                            html.match(/rating-number.*?(\d+)</is);
-        if (ratingMatch) {
-          stats.codechef.rating = parseInt(ratingMatch[1]);
-        }
+        if (response.ok) {
+          const html = await response.text();
+          
+          // CodeChef: Precision match (allowing for whitespace/newlines)
+          const ratingMatch = html.match(/rating-number[^>]*?>\s*(\d+)/is);
+          if (ratingMatch) {
+            stats.codechef.rating = parseInt(ratingMatch[1]);
+          }
 
-        // CodeChef: Star level match
-        const starMatch = html.match(/(\d+★)/) || html.match(/rating-star">(\d+★)/) || html.match(/>(\d+)\s*★/);
-        if (starMatch) {
-          stats.codechef.stars = starMatch[1].includes('★') ? starMatch[1] : starMatch[1] + '★';
+          const starMatch = html.match(/rating-star\">(\d+★)/) || html.match(/>(\d+★)</) || html.match(/(\d+★)/);
+          if (starMatch) {
+            stats.codechef.stars = starMatch[1];
+          }
         }
       } catch (e) {
-        console.error("CodeChef Sync Error", e);
+        console.error("CodeChef Scraping Error", e);
       }
     }
 
-    return NextResponse.json(stats);
+    // Update Database with Snapshot
+    const fs = require('fs');
+    const logPath = require('path').join(process.cwd(), 'sync-audit.log');
+    fs.appendFileSync(logPath, `[${new Date().toISOString()}] Sync for ${session.user.email}: ${JSON.stringify(stats)}\n`);
+    
+    await User.updateOne(
+      { _id: dbUser._id },
+      { 
+        externalStats: stats,
+        lastSyncedAt: now
+      }
+    );
+
+    return NextResponse.json({ ...stats, cached: false, lastSyncedAt: now });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

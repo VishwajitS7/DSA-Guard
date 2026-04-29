@@ -1,7 +1,7 @@
 "use client";
 
 import { signIn, signOut, useSession } from "next-auth/react";
-import { Search, Bell, LogOut, User } from "lucide-react";
+import { Search, Bell, LogOut, User, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -79,12 +79,31 @@ export default function Navbar() {
             />
             <div className="hidden sm:block text-left">
               <p className="text-xs font-bold leading-none">{session.user?.name?.split(" ")[0]}</p>
-              <p className="text-[10px] text-muted-foreground font-medium mt-1">Verified</p>
+              <p className="text-[10px] text-muted-foreground font-medium mt-1 flex items-center gap-1.5">
+                {(session.user as any).role === "admin" ? (
+                  <span className="text-primary flex items-center gap-1 font-bold">
+                    <ShieldAlert className="w-2.5 h-2.5" />
+                    ADMIN
+                  </span>
+                ) : "Verified"}
+              </p>
             </div>
           </div>
           
           <div className="absolute right-0 mt-3 w-48 bg-card border border-border rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
             <div className="p-2 space-y-1">
+              {(session.user as any).role === "admin" && (
+                <>
+                  <Link 
+                    href="/admin"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    Admin Pulse
+                  </Link>
+                  <div className="h-px bg-border mx-2"></div>
+                </>
+              )}
               <Link 
                 href="/settings"
                 className="w-full flex items-center gap-2 px-3 py-2.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg transition-colors"

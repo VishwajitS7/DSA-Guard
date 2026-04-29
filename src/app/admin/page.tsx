@@ -1,151 +1,224 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import connectDB from "@/lib/db";
-import Problem from "@/lib/models/Problem";
-import { 
-  ShieldAlert, 
-  Users, 
-  Database, 
-  Search, 
-  Filter, 
-  Trash2, 
-  Eye,
-  Lock
-} from "lucide-react";
+"use client";
+
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { Users, ShieldCheck, Activity, Globe, ArrowLeft, Search, RefreshCw, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
+export default function AdminDashboard() {
+  const { data: session } = useSession();
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
-// IMPORTANT: Replace this with your actual admin email
-const ADMIN_EMAIL = "your-admin-email@example.com"; 
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
-export default async function AdminDashboard() {
-  const session = await getServerSession(authOptions);
+  const fetchStats = async () => {
+    try {
+      const res = await fetch("/api/admin/stats");
+      const data = await res.json();
+      setStats(data);
+    } catch (e) {
+      console.error("Failed to load admin stats");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Security Check: Only allow a specific email to access this page
-  if (!session || session.user?.email !== ADMIN_EMAIL) {
+  const handleGlobalRefresh = async () => {
+    if (!confirm("This will clear the cache for all users. Continue?")) return;
+    setLoading(true);
+    try {
+      await fetch("/api/admin/stats", { method: "POST" });
+      alert("Global cache cleared. Users will re-sync on their next visit.");
+      fetchStats();
+    } catch (e) {
+      alert("Failed to trigger global sync");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`CRITICAL: Are you sure you want to delete ${userName}? This will permanently purge all their problems and data.`)) return;
+    if (!confirm(`FINAL WARNING: This action cannot be undone. Purge ${userName}?`)) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/stats?userId=${userId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message);
+        fetchStats();
+      } else {
+        alert(data.error);
+      }
+    } catch (e) {
+      alert("System error during purge.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (session?.user && (session.user as any).role !== "admin") {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center space-y-6 text-center animate-in">
-        <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/20">
-          <Lock className="w-10 h-10 text-red-500" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+        <div className="text-center space-y-4">
+          <ShieldCheck className="w-16 h-16 text-red-500 mx-auto" />
+          <h1 className="text-2xl font-bold text-slate-900">Access Restricted</h1>
+          <p className="text-slate-500">You do not have permission to view this page.</p>
+          <Link href="/dashboard" className="text-primary hover:underline block">Return to Dashboard</Link>
         </div>
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">403: Unauthorized Access</h1>
-          <p className="text-muted-foreground mt-2 max-w-md">
-            This administrative terminal is restricted to system architects. 
-            Your current identity ({session?.user?.email || "Guest"}) does not have the required permissions.
-          </p>
-        </div>
-        <Link href="/" className="btn-primary">Return to System Base</Link>
       </div>
     );
   }
 
-  await connectDB();
-  // Fetch ALL problems from ALL users for administrative oversight
-  const allProblems = await Problem.find({}).sort({ createdAt: -1 }).limit(100);
+  const filteredUsers = stats?.users?.filter((u: any) => 
+    u.name?.toLowerCase().includes(search.toLowerCase()) || 
+    u.email?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="space-y-10 animate-in pb-20">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-border">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
-            <ShieldAlert className="w-7 h-7" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">System Administrator</h1>
-            <p className="text-muted-foreground mt-1">Cross-user activity monitor and log management.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Admin Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-card tool-border p-6 rounded-xl">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Global Activity</p>
-          <p className="text-3xl font-bold mt-2">{allProblems.length}+ Logs</p>
-          <div className="mt-4 flex items-center gap-2 text-emerald-500 text-xs font-bold uppercase">
-            <Database className="w-3.5 h-3.5" />
-            Live Cluster Connection
-          </div>
-        </div>
-        <div className="bg-card tool-border p-6 rounded-xl">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">System Load</p>
-          <p className="text-3xl font-bold mt-2">Optimal</p>
-          <div className="mt-4 flex items-center gap-2 text-blue-500 text-xs font-bold uppercase">
-            <ShieldAlert className="w-3.5 h-3.5" />
-            Firewall Active
-          </div>
-        </div>
-        <div className="bg-card tool-border p-6 rounded-xl">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Architect Access</p>
-          <p className="text-3xl font-bold mt-2">Full Control</p>
-          <div className="mt-4 flex items-center gap-2 text-primary text-xs font-bold uppercase">
-            <Users className="w-3.5 h-3.5" />
-            Session Validated
-          </div>
-        </div>
-      </div>
-
-      {/* Global Activity Log */}
-      <div className="bg-card tool-border rounded-xl overflow-hidden">
-        <div className="p-6 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/30">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <Database className="w-5 h-5 text-primary" />
-            Global User Logs
-          </h2>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input type="text" placeholder="Search across users..." className="bg-white border border-border rounded py-1.5 pl-10 pr-4 text-xs focus:border-primary focus:outline-none w-64" />
-            </div>
-            <button className="p-2 border border-border rounded hover:bg-white"><Filter className="w-4 h-4" /></button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-slate-50/50 p-6 md:p-12">
+      <div className="max-w-7xl mx-auto space-y-8">
         
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50/50 border-b border-border">
-              <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">User ID / Email</th>
-              <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Problem Activity</th>
-              <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Log Date</th>
-              <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-right">Administrative Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {allProblems.map((problem) => (
-              <tr key={problem._id.toString()} className="hover:bg-slate-50 transition-colors group">
-                <td className="px-6 py-4">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-slate-900">{problem.user.toString().substring(0, 12)}...</span>
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Verified Identity</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold group-hover:text-primary transition-colors">{problem.title}</span>
-                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.1em]">{problem.topic} • {problem.difficulty}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-xs font-medium text-slate-500">
-                  {new Date(problem.createdAt).toLocaleString()}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-3">
-                    <Link href={`/problems/${problem._id}`} className="p-2 hover:bg-primary/10 text-primary rounded transition-all">
-                      <Eye className="w-4 h-4" />
-                    </Link>
-                    <button className="p-2 hover:bg-red-50 text-red-500 rounded transition-all opacity-0 group-hover:opacity-100">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <Link href="/dashboard" className="text-xs font-bold text-primary flex items-center gap-1 hover:gap-2 transition-all uppercase tracking-widest mb-2">
+              <ArrowLeft className="w-3 h-3" /> Back to App
+            </Link>
+            <h1 className="text-3xl font-black text-slate-900 flex items-center gap-3">
+              Admin Pulse
+              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">System Owner</span>
+            </h1>
+            <p className="text-slate-500 font-medium">Monitoring the Patternix ecosystem.</p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={handleGlobalRefresh}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-primary transition-all uppercase tracking-widest disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Global Refresh
+            </button>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Search users..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none w-full md:w-64 transition-all"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Top Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <StatCard title="Total Platform Users" value={stats?.totalUsers || 0} icon={<Users className="w-5 h-5" />} color="text-blue-600" />
+          <StatCard title="Problems Tracked in Patternix" value={stats?.totalProblems || 0} icon={<Activity className="w-5 h-5" />} color="text-emerald-500" />
+        </div>
+
+        {/* User Table */}
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="font-bold text-slate-900">User Directory</h3>
+            <span className="text-xs text-slate-400 font-medium">{filteredUsers?.length || 0} users found</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <tr>
+                  <th className="px-6 py-4">User</th>
+                  <th className="px-6 py-4">Role</th>
+                  <th className="px-6 py-4">Problems (Internal)</th>
+                  <th className="px-6 py-4">LeetCode</th>
+                  <th className="px-6 py-4">GFG</th>
+                  <th className="px-6 py-4">CodeChef</th>
+                  <th className="px-6 py-4">Last Sync</th>
+                  <th className="px-6 py-4 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {loading ? (
+                   <tr><td colSpan={8} className="px-6 py-12 text-center text-slate-400 italic">Loading system data...</td></tr>
+                ) : filteredUsers?.map((u: any) => (
+                  <tr key={u._id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900 text-sm">{u.name}</span>
+                        <span className="text-xs text-slate-500">{u.email}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${u.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500'}`}>
+                        {u.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm text-primary">{u.problemCount || 0}</span>
+                        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Problems</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm text-orange-600">{u.externalStats?.leetcode?.solved || 0}</span>
+                        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Solved</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm text-emerald-600">{u.externalStats?.gfg?.score || 0}</span>
+                        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">Points</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm text-rose-600">{u.externalStats?.codechef?.rating || 0}</span>
+                        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">{u.externalStats?.codechef?.stars || 'Unrated'}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-xs text-slate-400">
+                      {u.lastSyncedAt ? new Date(u.lastSyncedAt).toLocaleDateString() : "Never"}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button 
+                        onClick={() => handleDeleteUser(u._id, u.name)}
+                        disabled={loading || u._id === (session?.user as any)?.id}
+                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all disabled:opacity-20"
+                        title="Purge User"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function StatCard({ title, value, icon, color }: { title: string, value: any, icon: any, color: string }) {
+  return (
+    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{title}</span>
+        <div className={`${color} bg-current/10 p-2 rounded-lg`}>
+          {icon}
+        </div>
+      </div>
+      <p className="text-3xl font-black text-slate-900 tracking-tight">{value}</p>
     </div>
   );
 }

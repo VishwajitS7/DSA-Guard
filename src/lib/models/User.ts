@@ -35,6 +35,20 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    externalStats: {
+      leetcode: { solved: { type: Number, default: 0 } },
+      gfg: { solved: { type: Number, default: 0 }, score: { type: Number, default: 0 } },
+      codechef: { rating: { type: Number, default: 0 }, stars: { type: String, default: "" } },
+    },
+    lastSyncedAt: {
+      type: Date,
+      default: null
+    },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user"
+    }
   },
   { timestamps: true }
 );
