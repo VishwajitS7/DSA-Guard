@@ -20,6 +20,8 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const ADMIN_EMAIL = "your-admin-email@example.com";
+
 const navItems = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Problems", href: "/problems", icon: BookOpen },
@@ -36,19 +38,28 @@ export default function Sidebar() {
   // Don't show sidebar on landing page (root when unauthenticated)
   if (!session) return null;
 
+  const isAdmin = session.user?.email === ADMIN_EMAIL;
+  const currentNavItems = isAdmin 
+    ? [...navItems, { name: "Admin Console", href: "/admin", icon: ShieldCheck }]
+    : navItems;
+
   return (
     <aside className="w-64 border-r border-border bg-card flex flex-col hidden lg:flex sticky top-0 h-screen">
       <div className="p-8">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="bg-primary/10 p-2 rounded border border-primary/20 group-hover:bg-primary transition-colors">
-            <ShieldCheck className="w-6 h-6 text-primary group-hover:text-primary-foreground" />
+          <div className="w-10 h-10 relative group-hover:scale-110 transition-transform">
+            <img 
+              src="/logo.png" 
+              alt="Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
-          <span className="text-lg font-bold tracking-tighter">GUARDIAN</span>
+          <span className="text-xl font-black tracking-tighter text-slate-900">GUARDIAN</span>
         </Link>
       </div>
 
       <nav className="flex-1 px-4 space-y-1.5">
-        {navItems.map((item) => {
+        {currentNavItems.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link

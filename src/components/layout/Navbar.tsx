@@ -15,10 +15,14 @@ export default function Navbar() {
           onClick={() => document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' })}
           className="flex items-center gap-2 font-bold text-xl tracking-tighter"
         >
-          <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
-            <span className="text-primary-foreground text-sm font-black">G</span>
+          <div className="w-10 h-10 relative">
+            <img 
+              src="/logo.png" 
+              alt="Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
-          DSA GUARDIAN
+          <span className="text-xl font-black tracking-tighter text-slate-900">DSA GUARDIAN</span>
         </button>
         <div className="flex items-center gap-8">
           <button 
@@ -82,12 +86,15 @@ export default function Navbar() {
             />
             <div className="absolute right-0 mt-3 w-48 bg-card border border-border rounded shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
               <div className="p-2 space-y-1">
-                <button className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground rounded transition-colors">
+                <Link 
+                  href="/settings"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground rounded transition-colors"
+                >
                   <User className="w-3.5 h-3.5" />
-                  Profile Account
-                </button>
+                  Profile & Settings
+                </Link>
                 <button 
-                  onClick={() => signOut()}
+                  onClick={() => signOut({ callbackUrl: "/" })}
                   className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-400/10 rounded transition-colors"
                 >
                   <LogOut className="w-3.5 h-3.5" />
