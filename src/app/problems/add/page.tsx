@@ -1,4 +1,5 @@
 import ProblemForm from "@/components/problems/ProblemForm";
+import { Suspense } from "react";
 
 export default function AddProblemPage() {
   return (
@@ -8,7 +9,9 @@ export default function AddProblemPage() {
         <p className="text-muted-foreground mt-2 text-center">Capture your insights and patterns to build your DSA intuition.</p>
       </div>
 
-      <ProblemForm />
+      <Suspense fallback={<div className="flex items-center justify-center p-12 text-muted-foreground">Initializing mastery log...</div>}>
+        <ProblemForm />
+      </Suspense>
     </div>
   );
 }

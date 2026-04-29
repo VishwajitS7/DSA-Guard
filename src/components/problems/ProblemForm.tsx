@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { 
   Save,
   Loader2,
@@ -19,13 +19,16 @@ const commonPatterns = ["Sliding Window", "Two Pointers", "XOR", "Prefix Sum", "
 
 export default function ProblemForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const [loading, setLoading] = useState(false);
   const [isQuickLog, setIsQuickLog] = useState(true);
+  
   const [formData, setFormData] = useState({
-    title: "",
-    link: "",
-    topic: "Array",
-    difficulty: "Medium",
+    title: searchParams.get("title") || "",
+    link: searchParams.get("link") || searchParams.get("url") || "",
+    topic: searchParams.get("topic") || "Array",
+    difficulty: searchParams.get("difficulty") || "Medium",
     patterns: [] as string[],
     keyInsight: "",
     approachSummary: "",
