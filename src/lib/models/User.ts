@@ -23,6 +23,18 @@ const UserSchema = new mongoose.Schema(
     codechefUsername: {
       type: String,
     },
+    leetcodeUrl: {
+      type: String,
+      default: "",
+    },
+    gfgUrl: {
+      type: String,
+      default: "",
+    },
+    codechefUrl: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

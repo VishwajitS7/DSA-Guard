@@ -54,7 +54,7 @@ export default function Sidebar() {
               className="w-full h-full object-contain"
             />
           </div>
-          <span className="text-xl font-black tracking-tighter text-slate-900">GUARDIAN</span>
+          <span className="text-xl font-black tracking-tighter text-slate-900">PATTERNIX</span>
         </Link>
       </div>
 

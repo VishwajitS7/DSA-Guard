@@ -17,7 +17,7 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary/30">
       {/* Hero Section */}
-      <section id="hero" className="relative pt-16 pb-24 px-6 overflow-hidden">
+      <section id="hero" className="relative pt-48 pb-24 px-6 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none opacity-40">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary/10 blur-[150px] rounded-full"></div>
         </div>
@@ -29,10 +29,10 @@ export default function LandingPage() {
           </div>
           <h1 className="text-6xl md:text-7xl font-extrabold heading-tight mb-8 text-slate-900">
             Master Algorithms through <br />
-            <span className="text-primary">Cognitive Structure</span>
+            <span className="text-primary">Cognitive Patterns</span>
           </h1>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto mb-12 leading-relaxed">
-            DSA Guardian isn't just a tracker. It's a structured learning system that helps you categorize logic, analyze failures, and retain complex patterns forever.
+            Patternix isn't just a tracker. It's a structured learning system that helps you categorize logic, analyze failures, and retain complex patterns forever.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
             <button 
@@ -148,7 +148,7 @@ export default function LandingPage() {
           <div className="space-y-8">
             <h2 className="text-4xl font-bold text-slate-900 leading-tight">The "AHA!" Moment <br /><span className="text-primary text-3xl">Captured Forever.</span></h2>
             <p className="text-lg text-slate-600 leading-relaxed">
-              We focus on the cognitive science of learning. DSA Guardian forces you to slow down and document the <strong>Core Intelligence</strong> of every problem.
+              We focus on the cognitive science of learning. Patternix forces you to slow down and document the <strong>Core Intelligence</strong> of every problem.
             </p>
             <div className="space-y-6">
               {[
@@ -175,7 +175,7 @@ export default function LandingPage() {
       <section id="workflow" className="py-24 px-6 bg-white border-t border-slate-200">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">The Guardian Workflow</h2>
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">The Patternix Workflow</h2>
             <p className="text-slate-500">Four specific steps to absolute algorithm mastery.</p>
           </div>
           
@@ -214,11 +214,13 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="py-12 px-6 border-t border-slate-200 text-center text-slate-400 text-sm bg-white">
-        <div className="flex items-center justify-center gap-2 mb-4 font-bold text-slate-900">
-          <ShieldCheck className="w-6 h-6 text-primary" />
-          DSA GUARDIAN
+        <div className="flex items-center justify-center gap-2 mb-4 font-bold text-slate-900 uppercase tracking-tighter">
+          <div className="w-6 h-6 relative">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+          </div>
+          PATTERNIX
         </div>
-        <p>© 2026 DSA Guardian Platform. Built for serious mastery.</p>
+        <p>© 2026 Patternix Platform. Built for serious mastery.</p>
       </footer>
     </div>
   );

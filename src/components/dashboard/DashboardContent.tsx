@@ -1,6 +1,7 @@
 "use client";
 
 import StatsGrid from "@/components/dashboard/StatsGrid";
+import ExternalPresence from "@/components/dashboard/ExternalPresence";
 import { Plus, ArrowRight, Target, Brain, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Session } from "next-auth";
@@ -36,7 +37,9 @@ export default function DashboardContent({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Main Feed */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-10">
+          <ExternalPresence />
+
           <div className="bg-card tool-border rounded-xl">
             <div className="p-6 border-b border-border flex items-center justify-between">
               <h2 className="text-lg font-bold flex items-center gap-2">

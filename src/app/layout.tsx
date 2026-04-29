@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Josefin_Sans } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/components/providers/AuthProvider";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 
-const inter = Inter({ subsets: ["latin"] });
+const josefin = Josefin_Sans({ 
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
-  title: "DSA Guardian | Master Your Algorithms",
-  description: "Track, analyze, and improve your DSA problem-solving skills systematically.",
+  title: "Patternix | Master Your Algorithms",
+  description: "Advanced pattern-recognition and revision platform for data structures and algorithms.",
 };
 
 export default function RootLayout({
@@ -19,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.className} bg-background text-foreground antialiased`}>
+      <body className={`${josefin.className} bg-background text-foreground antialiased`}>
         <AuthProvider>
           <div className="flex min-h-screen">
             <Sidebar />

@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { 
-  User, 
+  User as UserIcon, 
   Mail, 
   Shield, 
   Bell, 
@@ -13,14 +13,27 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
+import connectDB from "@/lib/db";
+import User from "@/lib/models/User";
+import ExternalProfiles from "@/components/settings/ExternalProfiles";
+
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session) {
-    return <div className="p-20 text-center">Authentication Required</div>;
+  if (!session || !session.user?.email) {
+    return <div className="p-20 text-center font-bold text-slate-400">Authentication Required</div>;
   }
+
+  await connectDB();
+  const dbUser = await User.findOne({ email: session.user.email }).lean();
+
+  const initialUrls = {
+    leetcodeUrl: String(dbUser?.leetcodeUrl || ""),
+    gfgUrl: String(dbUser?.gfgUrl || ""),
+    codechefUrl: String(dbUser?.codechefUrl || ""),
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-10 animate-in pb-20">
@@ -74,7 +87,7 @@ export default async function SettingsPage() {
           <section className="bg-card tool-border rounded-xl overflow-hidden">
             <div className="p-6 border-b border-border bg-slate-50/50">
               <h3 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                <User className="w-4 h-4 text-primary" />
+                <UserIcon className="w-4 h-4 text-primary" />
                 Identity Information
               </h3>
             </div>
@@ -96,6 +109,9 @@ export default async function SettingsPage() {
               </div>
             </div>
           </section>
+
+          {/* External Profiles Integration */}
+          <ExternalProfiles initialUrls={initialUrls} />
 
           {/* System Preferences */}
           <section className="bg-card tool-border rounded-xl overflow-hidden">
