@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Josefin_Sans } from "next/font/google";
+import { Nunito } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/components/providers/AuthProvider";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 
-const josefin = Josefin_Sans({ 
+const nunito = Nunito({ 
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   display: 'swap',
@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${josefin.className} bg-background text-foreground antialiased`}>
+      <body className={`${nunito.className} bg-background text-foreground antialiased`}>
         <AuthProvider>
           <div className="flex min-h-screen">
             <Sidebar />

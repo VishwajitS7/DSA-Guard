@@ -2,12 +2,18 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import Problem from "@/lib/models/Problem";
-import { ExternalLink, Search, Filter, BookOpen, Plus } from "lucide-react";
+import { ExternalLink, BookOpen, Plus } from "lucide-react";
 import Link from "next/link";
+import ProblemSearch from "@/components/problems/ProblemSearch";
+import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProblemsPage() {
+export default async function ProblemsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const session = await getServerSession(authOptions);
   
   if (!session) {
@@ -21,7 +27,27 @@ export default async function ProblemsPage() {
   }
 
   await connectDB();
-  const problems = await Problem.find({ user: (session.user as any).id }).sort({ createdAt: -1 });
+  
+  // Build query
+  const userId = (session.user as any).id;
+  const query: any = { user: userId };
+  
+  const searchParamsAwaited = await searchParams;
+  const search = typeof searchParamsAwaited.search === "string" ? searchParamsAwaited.search : undefined;
+  const topic = typeof searchParamsAwaited.topic === "string" ? searchParamsAwaited.topic : undefined;
+  const difficulty = typeof searchParamsAwaited.difficulty === "string" ? searchParamsAwaited.difficulty : undefined;
+
+  if (search) {
+    query.title = { $regex: search, $options: "i" };
+  }
+  if (topic) {
+    query.topic = topic;
+  }
+  if (difficulty) {
+    query.difficulty = difficulty;
+  }
+
+  const problems = await Problem.find(query).sort({ createdAt: -1 });
 
   return (
     <div className="space-y-8 animate-in">
@@ -30,20 +56,12 @@ export default async function ProblemsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Problem Repository</h1>
           <p className="text-muted-foreground mt-1">Found {problems.length} problems in your system.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Search by title, topic..." 
-              className="bg-muted/30 border border-border rounded py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-primary transition-all w-64"
-            />
-          </div>
-          <button className="flex items-center gap-2 px-3 py-2 border border-border rounded bg-muted/20 hover:bg-muted transition-all text-sm font-medium">
-            <Filter className="w-4 h-4" />
-            Filters
-          </button>
-          <Link href="/problems/add" className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded font-bold text-sm hover:opacity-90 transition-all">
+        <div className="flex items-center gap-4">
+          <Suspense fallback={<div className="w-64 h-10 bg-muted animate-pulse rounded"></div>}>
+            <ProblemSearch />
+          </Suspense>
+          <div className="h-8 w-px bg-border hidden md:block mx-2"></div>
+          <Link href="/problems/add" className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded font-bold text-sm hover:opacity-90 transition-all whitespace-nowrap">
             <Plus className="w-4 h-4" />
             New Problem
           </Link>
@@ -106,7 +124,7 @@ export default async function ProblemsPage() {
             {problems.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-6 py-20 text-center text-muted-foreground italic text-sm">
-                  The repository is currently empty. Initialize by adding your first solved problem.
+                  {search || topic || difficulty ? "No problems match your search criteria." : "The repository is currently empty. Initialize by adding your first solved problem."}
                 </td>
               </tr>
             )}
@@ -116,3 +134,4 @@ export default async function ProblemsPage() {
     </div>
   );
 }
+

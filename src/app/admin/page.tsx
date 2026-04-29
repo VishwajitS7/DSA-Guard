@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { Users, ShieldCheck, Activity, Globe, ArrowLeft, Search, RefreshCw, Trash2 } from "lucide-react";
+import { Users, ShieldCheck, Activity, Globe, ArrowLeft, Search, RefreshCw, Trash2, X } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminDashboard() {
@@ -76,9 +76,9 @@ export default function AdminDashboard() {
   }
 
   const filteredUsers = stats?.users?.filter((u: any) => 
-    u.name?.toLowerCase().includes(search.toLowerCase()) || 
-    u.email?.toLowerCase().includes(search.toLowerCase())
-  );
+    (u.name?.toLowerCase().includes(search.toLowerCase()) || 
+    u.email?.toLowerCase().includes(search.toLowerCase())) ?? false
+  ) || [];
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-12">
@@ -106,18 +106,27 @@ export default function AdminDashboard() {
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               Global Refresh
             </button>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
               <input 
                 type="text" 
                 placeholder="Search users..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none w-full md:w-64 transition-all"
+                className="pl-10 pr-10 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none w-full md:w-64 transition-all"
               />
+              {search && (
+                <button 
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-100 rounded-full"
+                >
+                  <X className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+              )}
             </div>
           </div>
         </div>
+
 
         {/* Top Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
