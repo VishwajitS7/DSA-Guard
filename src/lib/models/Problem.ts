@@ -26,7 +26,6 @@ const ProblemSchema = new mongoose.Schema(
     ],
     keyInsight: {
       type: String,
-      required: true,
     },
     approachSummary: {
       type: String,
@@ -65,5 +64,9 @@ const ProblemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Problem = mongoose.models.Problem || mongoose.model("Problem", ProblemSchema);
+// Force Mongoose to recompile the schema during Next.js hot-reloads
+if (mongoose.models.Problem) {
+  delete mongoose.models.Problem;
+}
+const Problem = mongoose.model("Problem", ProblemSchema);
 export default Problem;

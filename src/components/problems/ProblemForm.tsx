@@ -89,9 +89,13 @@ export default function ProblemForm() {
       if (res.ok) {
         router.push("/problems");
         router.refresh();
+      } else {
+        const errorData = await res.json();
+        alert(`Failed to save problem: ${errorData.error}`);
       }
     } catch (error) {
       console.error("Error submitting problem:", error);
+      alert("An unexpected error occurred while saving.");
     } finally {
       setLoading(false);
     }

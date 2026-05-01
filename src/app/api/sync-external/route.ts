@@ -106,7 +106,7 @@ export async function GET(req: Request) {
           const html = await response.text();
           
           // CodeChef: Precision match (allowing for whitespace/newlines)
-          const ratingMatch = html.match(/rating-number[^>]*?>\s*(\d+)/is);
+          const ratingMatch = html.match(/rating-number[^>]*?>\s*(\d+)/i);
           if (ratingMatch) {
             stats.codechef.rating = parseInt(ratingMatch[1]);
           }

@@ -22,8 +22,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(problem, { status: 201 });
   } catch (error) {
-    console.error("API Error:", error);
-    return NextResponse.json({ error: "Failed to create problem" }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to create problem" }, { status: 500 });
   }
 }
 
