@@ -17,25 +17,30 @@ const topics = ["Array", "String", "DP", "Graph", "Tree", "LinkedList", "Binary 
 const difficulties = ["Easy", "Medium", "Hard"];
 const commonPatterns = ["Sliding Window", "Two Pointers", "XOR", "Prefix Sum", "Binary Search", "DFS", "BFS", "Recursion", "Dynamic Programming", "Greedy", "Backtracking"];
 
-export default function ProblemForm() {
+interface ProblemFormProps {
+  initialData?: any;
+  problemId?: string;
+}
+
+export default function ProblemForm({ initialData, problemId }: ProblemFormProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   
   const [loading, setLoading] = useState(false);
-  const [isQuickLog, setIsQuickLog] = useState(true);
+  const [isQuickLog, setIsQuickLog] = useState(!initialData);
   
   const [formData, setFormData] = useState({
-    title: searchParams.get("title") || "",
-    link: searchParams.get("link") || searchParams.get("url") || "",
-    topic: searchParams.get("topic") || "Array",
-    difficulty: searchParams.get("difficulty") || "Medium",
-    patterns: [] as string[],
-    keyInsight: "",
-    approachSummary: "",
-    alternateApproach: "",
-    timeComplexity: "",
-    spaceComplexity: "",
-    mistakes: [] as string[],
+    title: initialData?.title || searchParams.get("title") || "",
+    link: initialData?.link || searchParams.get("link") || searchParams.get("url") || "",
+    topic: initialData?.topic || searchParams.get("topic") || "Array",
+    difficulty: initialData?.difficulty || searchParams.get("difficulty") || "Medium",
+    patterns: initialData?.patterns || ([] as string[]),
+    keyInsight: initialData?.keyInsight || "",
+    approachSummary: initialData?.approachSummary || "",
+    alternateApproach: initialData?.alternateApproach || "",
+    timeComplexity: initialData?.timeComplexity || "",
+    spaceComplexity: initialData?.spaceComplexity || "",
+    mistakes: initialData?.mistakes || ([] as string[]),
   });
 
   const [newPattern, setNewPattern] = useState("");
@@ -80,8 +85,11 @@ export default function ProblemForm() {
     setLoading(true);
     
     try {
-      const res = await fetch("/api/problems", {
-        method: "POST",
+      const url = problemId ? `/api/problems/${problemId}` : "/api/problems";
+      const method = problemId ? "PUT" : "POST";
+      
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
@@ -139,9 +147,9 @@ export default function ProblemForm() {
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Log Mastery</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{problemId ? "Edit Log" : "Log Mastery"}</h1>
             <div className="flex items-center gap-4 mt-1">
-              <p className="text-muted-foreground">Initialize a new problem record.</p>
+              <p className="text-muted-foreground">{problemId ? "Update your problem record." : "Initialize a new problem record."}</p>
               <div className="h-4 w-px bg-border"></div>
               <button 
                 onClick={() => setIsQuickLog(!isQuickLog)}
@@ -162,7 +170,7 @@ export default function ProblemForm() {
             className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded font-bold text-sm hover:shadow-xl transition-all shadow-sm disabled:opacity-50"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Commit Log
+            {problemId ? "Update Log" : "Commit Log"}
           </button>
         </div>
       </div>

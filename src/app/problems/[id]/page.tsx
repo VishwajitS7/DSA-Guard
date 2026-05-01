@@ -10,7 +10,8 @@ import {
   Lightbulb, 
   MessageSquare, 
   AlertCircle,
-  FileCode
+  FileCode,
+  Pencil
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -49,6 +50,13 @@ export default async function ProblemDetailsPage({ params }: { params: Promise<{
         </Link>
         <div className="flex items-center gap-4">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Status: Mastered</span>
+          <Link
+            href={`/problems/edit/${problem._id}`}
+            className="inline-flex items-center gap-2 bg-muted hover:bg-muted/80 px-4 py-2 rounded transition-all text-xs font-bold uppercase tracking-widest"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Edit
+          </Link>
           <a 
             href={problem.link} 
             target="_blank" 

@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import Problem from "@/lib/models/Problem";
-import { ExternalLink, BookOpen, Plus } from "lucide-react";
+import { ExternalLink, BookOpen, Plus, Pencil } from "lucide-react";
 import Link from "next/link";
 import ProblemSearch from "@/components/problems/ProblemSearch";
 import { Suspense } from "react";
@@ -114,6 +114,9 @@ export default async function ProblemsPage({
                     <a href={problem.link} target="_blank" className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-all">
                       <ExternalLink className="w-4 h-4" />
                     </a>
+                    <Link href={`/problems/edit/${problem._id}`} className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-all" title="Edit Problem">
+                      <Pencil className="w-4 h-4" />
+                    </Link>
                     <Link href={`/problems/${problem._id}`} className="text-xs font-bold text-primary hover:underline uppercase tracking-widest px-3 py-1.5 rounded hover:bg-primary/5 transition-all">
                       Review
                     </Link>
