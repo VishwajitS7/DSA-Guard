@@ -7,11 +7,14 @@ import {
   Loader2,
   ChevronLeft,
   Book,
-  Code,
   Lightbulb,
-  AlertTriangle
+  Upload,
+  Trash2,
+  FileText,
+  Image as ImageIcon
 } from "lucide-react";
 import Link from "next/link";
+import { CldUploadWidget } from "next-cloudinary";
 
 const topics = ["Array", "String", "DP", "Graph", "Tree", "LinkedList", "Binary Search", "Sliding Window", "Recursion", "Backtracking", "Stack", "Queue", "Heap", "Trie", "Math", "Bit Manipulation"];
 const difficulties = ["Easy", "Medium", "Hard"];
@@ -29,6 +32,12 @@ export default function ProblemForm({ initialData, problemId }: ProblemFormProps
   const [loading, setLoading] = useState(false);
   const [isQuickLog, setIsQuickLog] = useState(!initialData);
   
+  interface NoteFile {
+    url: string;
+    format: string;
+    publicId: string;
+  }
+
   const [formData, setFormData] = useState({
     title: initialData?.title || searchParams.get("title") || "",
     link: initialData?.link || searchParams.get("link") || searchParams.get("url") || "",
@@ -41,6 +50,7 @@ export default function ProblemForm({ initialData, problemId }: ProblemFormProps
     timeComplexity: initialData?.timeComplexity || "",
     spaceComplexity: initialData?.spaceComplexity || "",
     mistakes: initialData?.mistakes || ([] as string[]),
+    notes: (initialData?.notes || []) as NoteFile[],
   });
 
   const [newPattern, setNewPattern] = useState("");
@@ -78,6 +88,24 @@ export default function ProblemForm({ initialData, problemId }: ProblemFormProps
       setFormData({ ...formData, mistakes: [...formData.mistakes, newMistake] });
       setNewMistake("");
     }
+  };
+
+  const handleNoteUpload = (result: any) => {
+    const info = result?.info;
+    if (!info) return;
+    const newNote: NoteFile = {
+      url: info.secure_url,
+      format: info.format || info.resource_type,
+      publicId: info.public_id,
+    };
+    setFormData(prev => ({ ...prev, notes: [...prev.notes, newNote] }));
+  };
+
+  const handleRemoveNote = (publicId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      notes: prev.notes.filter(n => n.publicId !== publicId),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -273,6 +301,86 @@ export default function ProblemForm({ initialData, problemId }: ProblemFormProps
               </div>
             </section>
           )}
+
+          {/* Handwritten Notes Upload — always visible */}
+          <section className="bg-card tool-border rounded-xl p-8 space-y-6">
+            <div className="flex items-center justify-between border-b border-border pb-4 mb-2">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                Handwritten Notes
+              </h2>
+              <CldUploadWidget
+                uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!}
+                options={{
+                  sources: ["local"],
+                  multiple: true,
+                  clientAllowedFormats: ["pdf", "jpg", "jpeg", "png", "webp"],
+                  maxFileSize: 10000000, // 10 MB
+                  resourceType: "auto",
+                }}
+                onSuccess={handleNoteUpload}
+              >
+                {({ open }) => (
+                  <button
+                    type="button"
+                    onClick={() => open()}
+                    className="flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded font-bold text-xs uppercase tracking-widest border border-primary/20 hover:bg-primary hover:text-white transition-all"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Upload Notes
+                  </button>
+                )}
+              </CldUploadWidget>
+            </div>
+
+            {formData.notes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 border-2 border-dashed border-border rounded-lg text-muted-foreground">
+                <FileText className="w-10 h-10 mb-3 opacity-20" />
+                <p className="text-xs font-bold uppercase tracking-widest">No notes uploaded yet</p>
+                <p className="text-[10px] mt-1 opacity-60">Supports PDF, JPG, PNG — up to 10 MB each</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {formData.notes.map((note) => {
+                  const isPdf = note.format === "pdf";
+                  return (
+                    <div
+                      key={note.publicId}
+                      className="group relative flex items-center gap-3 bg-muted/20 border border-border rounded-lg p-3 hover:border-primary/40 transition-all"
+                    >
+                      <div className="shrink-0 w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+                        {isPdf ? <FileText className="w-5 h-5" /> : <ImageIcon className="w-5 h-5" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold uppercase tracking-widest truncate">
+                          {note.publicId.split("/").pop()}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground uppercase mt-0.5">{note.format}</p>
+                      </div>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                        <a
+                          href={note.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] font-bold text-primary hover:underline uppercase"
+                        >
+                          View
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveNote(note.publicId)}
+                          className="p-1 text-red-500 hover:bg-red-500/10 rounded transition-all"
+                          title="Remove note"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </div>
 
         {/* Sidebar */}
@@ -299,10 +407,10 @@ export default function ProblemForm({ initialData, problemId }: ProblemFormProps
               </div>
 
               <div className="flex gap-2 flex-wrap pt-4 border-t border-border">
-                {formData.patterns.map(p => (
+                {formData.patterns.map((p: string) => (
                   <span key={p} className="bg-primary text-white px-2 py-1 rounded text-[10px] font-bold uppercase border border-primary/20 flex items-center gap-1">
                     {p}
-                    <button type="button" onClick={() => setFormData({...formData, patterns: formData.patterns.filter(x => x !== p)})} className="hover:text-red-300">×</button>
+                    <button type="button" onClick={() => setFormData({...formData, patterns: formData.patterns.filter((x: string) => x !== p)})} className="hover:text-red-300">×</button>
                   </span>
                 ))}
               </div>
@@ -343,10 +451,10 @@ export default function ProblemForm({ initialData, problemId }: ProblemFormProps
                 <h2 className="text-sm font-bold uppercase tracking-widest text-red-500 border-b border-red-500/10 pb-4">Failure Analysis</h2>
                 <div className="space-y-4">
                   <div className="flex gap-2 flex-wrap">
-                    {formData.mistakes.map(m => (
+                    {formData.mistakes.map((m: string) => (
                       <span key={m} className="bg-red-500/10 text-red-600 px-2 py-1 rounded text-[10px] font-bold uppercase border border-red-500/20 flex items-center gap-1">
                         {m}
-                        <button type="button" onClick={() => setFormData({...formData, mistakes: formData.mistakes.filter(x => x !== m)})} className="hover:text-red-800">×</button>
+                        <button type="button" onClick={() => setFormData({...formData, mistakes: formData.mistakes.filter((x: string) => x !== m)})} className="hover:text-red-800">×</button>
                       </span>
                     ))}
                   </div>

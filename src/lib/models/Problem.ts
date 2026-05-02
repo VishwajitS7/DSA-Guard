@@ -60,6 +60,13 @@ const ProblemSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    notes: [
+      {
+        url: { type: String, required: true },
+        format: { type: String }, // e.g. "pdf", "jpg", "png"
+        publicId: { type: String }, // Cloudinary public_id for deletion later
+      },
+    ],
   },
   { timestamps: true }
 );

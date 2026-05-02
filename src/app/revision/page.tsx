@@ -56,7 +56,7 @@ export default async function RevisionPage() {
       ) : (
         <div className="grid grid-cols-1 gap-6">
           {dueProblems.map((problem) => (
-            <div key={problem._id} className="bg-card tool-border rounded-xl overflow-hidden flex flex-col md:flex-row">
+            <div key={problem._id.toString()} className="bg-card tool-border rounded-xl overflow-hidden flex flex-col md:flex-row">
               <div className="flex-1 p-8">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">

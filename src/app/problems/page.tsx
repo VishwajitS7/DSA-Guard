@@ -81,7 +81,7 @@ export default async function ProblemsPage({
           </thead>
           <tbody className="divide-y divide-border">
             {problems.map((problem) => (
-              <tr key={problem._id} className="table-row-hover transition-colors group">
+              <tr key={problem._id.toString()} className="table-row-hover transition-colors group">
                 <td className="px-6 py-4">
                   <div className="flex flex-col">
                     <Link href={`/problems/${problem._id}`} className="font-bold text-sm hover:text-primary transition-colors">{problem.title}</Link>

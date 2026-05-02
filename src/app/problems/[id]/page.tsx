@@ -11,7 +11,9 @@ import {
   MessageSquare, 
   AlertCircle,
   FileCode,
-  Pencil
+  Pencil,
+  FileText,
+  Download
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -146,6 +148,65 @@ export default async function ProblemDetailsPage({ params }: { params: Promise<{
               <h2 className="text-lg font-bold uppercase tracking-widest border-b border-border pb-4">Optimization / Alternate</h2>
               <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap text-sm font-medium">
                 {problem.alternateApproach}
+              </div>
+            </section>
+          )}
+
+          {/* Handwritten Notes */}
+          {problem.notes && problem.notes.length > 0 && (
+            <section className="bg-card tool-border rounded-xl p-8 space-y-6">
+              <div className="flex items-center gap-3 border-b border-border pb-4">
+                <FileText className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-bold uppercase tracking-widest">Handwritten Notes</h2>
+                <span className="ml-auto text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted px-2 py-0.5 rounded">
+                  {problem.notes.length} {problem.notes.length === 1 ? "file" : "files"}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {problem.notes.map((note: { url: string; format?: string | null; publicId?: string | null }, idx: number) => {
+                  const isPdf = note.format === "pdf";
+                  const isImage = ["jpg", "jpeg", "png", "webp"].includes((note.format ?? "").toLowerCase());
+                  return (
+                    <a
+                      key={note.publicId || idx}
+                      href={note.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group block rounded-xl border border-border overflow-hidden hover:border-primary/50 transition-all hover:shadow-lg"
+                    >
+                      {isImage ? (
+                        <div className="relative">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={note.url}
+                            alt={`Note ${idx + 1}`}
+                            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                            <span className="opacity-0 group-hover:opacity-100 transition-all bg-white/90 text-black font-bold text-xs uppercase tracking-widest px-3 py-1.5 rounded flex items-center gap-1.5">
+                              <Download className="w-3 h-3" /> Open
+                            </span>
+                          </div>
+                          <div className="px-4 py-3 bg-card border-t border-border">
+                            <p className="text-xs font-bold uppercase tracking-widest truncate">{note.publicId?.split("/").pop() || `Note ${idx + 1}`}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 uppercase">{note.format}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-4 p-4">
+                          <div className="w-12 h-12 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+                            <FileText className="w-6 h-6 text-red-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold uppercase tracking-widest truncate">{note.publicId?.split("/").pop() || `Note ${idx + 1}`}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 uppercase">PDF Document</p>
+                          </div>
+                          <Download className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                        </div>
+                      )}
+                    </a>
+                  );
+                })}
               </div>
             </section>
           )}
